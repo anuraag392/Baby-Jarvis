@@ -11,7 +11,8 @@ google-auth-oauthlib
 protobuf==4.25.3
 requests
 matplotlib
-fastembed
+fastembed==0.3.0
+
 
 
 
