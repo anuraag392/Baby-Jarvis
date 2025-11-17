@@ -20,7 +20,6 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 # === NEW: Local Embeddings + FAISS RAG ===
-from sentence_transformers import SentenceTransformer
 import faiss
 
 # ============================================
@@ -52,8 +51,16 @@ CHUNK_OVERLAP = 200
 # ============================================
 
 # Fast, accurate, lightweight model — perfect for RAG
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+#embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+import google.generativeai as genai
 
+def embed_text(text: str):
+    result = genai.embed_content(
+        model="models/embedding-001",
+        content=text,
+        task_type="retrieval_document"
+    )
+    return result["embedding"]
 # ============================================
 # 3. FAISS INDEX + RAG METADATA HANDLERS
 # ============================================
@@ -866,4 +873,5 @@ def run_agent(user_text, history):
 
     model = SPECIALIST_MODELS[role]
     answer, new_history = _run_with_model(model, user_text, history)
+
     return answer, new_history
