@@ -1,6 +1,12 @@
 import streamlit as st
 import os
 from agent4 import run_agent
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env locally, safe to keep in code
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 
 # Ensure workspace exists
 os.makedirs("workspace", exist_ok=True)
@@ -84,3 +90,4 @@ if user_input:
     # Append assistant response
     st.session_state.messages.append({"role": "assistant", "content": response})
     st.chat_message("assistant").markdown(response)
+
