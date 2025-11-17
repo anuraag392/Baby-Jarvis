@@ -21,26 +21,10 @@ from googleapiclient.discovery import build
 
 # === NEW: Local Embeddings + FAISS RAG ===
 import faiss
-import google.generativeai as genai
+from fastembed import TextEmbedding
 
-class GeminiEmbeddingModel:
-    def __init__(self, model_name="models/embedding-001"):
-        self.model_name = model_name
 
-    def encode(self, texts):
-        # Ensure list input
-        if isinstance(texts, str):
-            texts = [texts]
 
-        vectors = []
-        for t in texts:
-            result = genai.embed_content(
-                model=self.model_name,
-                content=t,
-                task_type="retrieval_document"
-            )
-            vectors.append(result["embedding"])
-        return vectors
 
 
 # ============================================
@@ -73,8 +57,12 @@ CHUNK_OVERLAP = 200
 
 # Fast, accurate, lightweight model — perfect for RAG
 #embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+embedding_model = TextEmbedding()   # loads a lightweight local model
 
-embedding_model = GeminiEmbeddingModel()
+def embed_chunks(texts):
+    # FastEmbed returns a generator → convert to list
+    return list(embedding_model.embed(texts))
+
 # ============================================
 # 3. FAISS INDEX + RAG METADATA HANDLERS
 # ============================================
@@ -189,7 +177,7 @@ def rag_ingest_file(filename: str) -> str:
 
     # 3) Embeddings
     texts_to_embed = [c for c in chunks]
-    embeddings = np.array(embedding_model.encode(chunks), dtype="float32")
+    embeddings = np.array(embed_chunks(chunks), dtype="float32")
     index.add(embeddings)
     # 4) Load FAISS + metadata
     index, metadata = load_faiss()
@@ -223,7 +211,7 @@ def rag_query(question: str, top_k: int = 5) -> str:
         return "RAG store is empty. Please ingest a document first."
 
     # Embed question
-    query_emb = np.array(embedding_model.encode([query]), dtype="float32")
+    query_emb = np.array(embed_chunks([query]), dtype="float32")
     D, I = index.search(query_emb, top_k)
 
     retrieved_chunks = []
@@ -887,5 +875,6 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
 
