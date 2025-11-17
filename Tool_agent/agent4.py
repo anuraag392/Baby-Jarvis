@@ -189,8 +189,8 @@ def rag_ingest_file(filename: str) -> str:
 
     # 3) Embeddings
     texts_to_embed = [c for c in chunks]
-    embeddings = embedding_model.encode(texts_to_embed, convert_to_numpy=True)
-
+    embeddings = np.array(embedding_model.encode(chunks), dtype="float32")
+    index.add(embeddings)
     # 4) Load FAISS + metadata
     index, metadata = load_faiss()
 
@@ -223,10 +223,8 @@ def rag_query(question: str, top_k: int = 5) -> str:
         return "RAG store is empty. Please ingest a document first."
 
     # Embed question
-    q_emb = embedding_model.encode([question], convert_to_numpy=True)
-
-    # Search FAISS
-    D, I = index.search(q_emb, top_k)
+    query_emb = np.array(embedding_model.encode([query]), dtype="float32")
+    D, I = index.search(query_emb, top_k)
 
     retrieved_chunks = []
     for idx in I[0]:
@@ -889,4 +887,5 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
