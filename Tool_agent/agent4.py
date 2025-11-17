@@ -21,6 +21,27 @@ from googleapiclient.discovery import build
 
 # === NEW: Local Embeddings + FAISS RAG ===
 import faiss
+import google.generativeai as genai
+
+class GeminiEmbeddingModel:
+    def __init__(self, model_name="models/embedding-001"):
+        self.model_name = model_name
+
+    def encode(self, texts):
+        # Ensure list input
+        if isinstance(texts, str):
+            texts = [texts]
+
+        vectors = []
+        for t in texts:
+            result = genai.embed_content(
+                model=self.model_name,
+                content=t,
+                task_type="retrieval_document"
+            )
+            vectors.append(result["embedding"])
+        return vectors
+
 
 # ============================================
 # 1. ENV SETUP
@@ -52,15 +73,8 @@ CHUNK_OVERLAP = 200
 
 # Fast, accurate, lightweight model — perfect for RAG
 #embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-import google.generativeai as genai
 
-def embed_text(text: str):
-    result = genai.embed_content(
-        model="models/embedding-001",
-        content=text,
-        task_type="retrieval_document"
-    )
-    return result["embedding"]
+embedding_model = GeminiEmbeddingModel()
 # ============================================
 # 3. FAISS INDEX + RAG METADATA HANDLERS
 # ============================================
@@ -875,3 +889,4 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
