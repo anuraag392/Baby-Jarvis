@@ -203,7 +203,7 @@ def rag_query(question: str, top_k: int = 5) -> str:
         return "RAG store is empty. Please ingest a document first."
 
     # Embed question
-    query_emb = np.array(embed_chunks([query]), dtype="float32")
+    query_emb = np.array(embed_chunks([question]), dtype="float32")
     D, I = index.search(query_emb, top_k)
 
     retrieved_chunks = []
@@ -867,6 +867,7 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
 
 
