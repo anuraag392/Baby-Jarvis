@@ -162,7 +162,7 @@ def chunk_text(text: str):
 
 def rag_ingest_file(filename: str) -> str:
     """Full ingestion pipeline: extract → chunk → embed → store."""
-    filepath = os.path.join(WORKSPACE, filename)
+    filepath = os.path.join(FILE_SANDBOX, filename)
 
     # 1) Extract text
     full_text = extract_text(filepath)
@@ -867,6 +867,7 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
 
 
