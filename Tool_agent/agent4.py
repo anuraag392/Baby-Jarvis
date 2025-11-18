@@ -165,7 +165,7 @@ def rag_ingest_file(filename: str) -> str:
     filepath = os.path.join(FILE_SANDBOX, filename)
 
     # 1) Extract text
-    full_text = extract_text(filepath)
+    full_text = extract_text_from_file(filepath)
     if not full_text.strip():
         return "❌ Could not extract text."
 
@@ -867,6 +867,7 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
 
 
