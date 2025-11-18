@@ -144,16 +144,18 @@ def extract_text_from_file(filepath: str) -> str:
 # 5. CHUNKING FOR RAG
 # ============================================
 
-def chunk_text(text: str):
-    """Split text into overlapping chunks for RAG."""
+def chunk_text(text, chunk_size=2000, overlap=200):
     chunks = []
     start = 0
+
     while start < len(text):
-        end = start + CHUNK_SIZE
-        chunk = text[start:end]
-        chunks.append(chunk)
-        start = end - CHUNK_OVERLAP  # overlapping for context
-    return chunks
+        end = start + chunk_size
+        chunks.append(text[start:end])
+        start += chunk_size - overlap
+
+    # HARD LIMIT — prevent RAM crash
+    MAX_CHUNKS = 3000
+    return chunks[:MAX_CHUNKS]
 
 
 # ============================================
@@ -163,7 +165,15 @@ def chunk_text(text: str):
 def rag_ingest_file(filename: str) -> str:
     """Full ingestion pipeline: extract → chunk → embed → store."""
     filepath = os.path.join(FILE_SANDBOX, filename)
+    file_size = os.path.getsize(filepath)
 
+    if file_size > 5 * 1024 * 1024:  # 5 MB
+        return "❌ File too large. Please upload PDFs under 5MB."
+
+    # Extract text
+    full_text = extract_text(filepath)
+    if not full_text.strip():
+        return "❌ Could not extract text from this document."
     # 1) Extract text
     full_text = extract_text_from_file(filepath)
     if not full_text.strip():
@@ -180,7 +190,15 @@ def rag_ingest_file(filename: str) -> str:
         metadata.append({"text": c})
 
     # 5) Embeddings
-    embeddings = np.array(embed_chunks(chunks), dtype="float32")
+    BATCH = 50
+    vectors = []
+
+    for i in range(0, len(chunks), BATCH):
+        batch = chunks[i:i+BATCH]
+        vecs = embed_chunks(batch)  # fastembed returns list
+        vectors.extend(vecs)
+
+    embeddings = np.array(vectors, dtype="float32")
 
     # 6) Add to FAISS
     index.add(embeddings)
@@ -867,6 +885,7 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
 
 
