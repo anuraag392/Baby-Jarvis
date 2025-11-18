@@ -170,10 +170,6 @@ def rag_ingest_file(filename: str) -> str:
     if file_size > 5 * 1024 * 1024:  # 5 MB
         return "❌ File too large. Please upload PDFs under 5MB."
 
-    # Extract text
-    full_text = extract_text(filepath)
-    if not full_text.strip():
-        return "❌ Could not extract text from this document."
     # 1) Extract text
     full_text = extract_text_from_file(filepath)
     if not full_text.strip():
@@ -885,6 +881,7 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
 
 
