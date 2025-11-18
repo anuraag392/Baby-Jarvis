@@ -162,41 +162,33 @@ def chunk_text(text: str):
 
 def rag_ingest_file(filename: str) -> str:
     """Full ingestion pipeline: extract → chunk → embed → store."""
-    filepath = os.path.join(FILE_SANDBOX, filename)
-
-    if not os.path.exists(filepath):
-        return f"File '{filename}' not found in workspace."
+    filepath = os.path.join(WORKSPACE, filename)
 
     # 1) Extract text
-    text = extract_text_from_file(filepath)
-    if not text.strip():
-        return f"Could not extract text (empty file)."
+    full_text = extract_text(filepath)
+    if not full_text.strip():
+        return "❌ Could not extract text."
 
-    # 2) Chunking
-    chunks = chunk_text(text)
+    # 2) Chunk it
+    chunks = chunk_text(full_text)
 
-    # 3) Embeddings
-    texts_to_embed = [c for c in chunks]
-    embeddings = np.array(embed_chunks(chunks), dtype="float32")
-    index.add(embeddings)
-    # 4) Load FAISS + metadata
+    # 3) Load or create FAISS index + metadata
     index, metadata = load_faiss()
 
-    # 5) Add embeddings + metadata
-    start_id = len(metadata)
-    for i, chunk in enumerate(chunks):
-        metadata.append({
-            "chunk_id": start_id + i,
-            "filename": filename,
-            "text": chunk
-        })
+    # 4) Update metadata
+    for c in chunks:
+        metadata.append({"text": c})
 
+    # 5) Embeddings
+    embeddings = np.array(embed_chunks(chunks), dtype="float32")
+
+    # 6) Add to FAISS
     index.add(embeddings)
 
-    # 6) Save
+    # 7) Save everything
     save_faiss(index, metadata)
 
-    return f"Ingested '{filename}' with {len(chunks)} chunks."
+    return f"📥 Ingested {len(chunks)} chunks from {filename}."
 
 
 # ============================================
@@ -875,6 +867,7 @@ def run_agent(user_text, history):
     answer, new_history = _run_with_model(model, user_text, history)
 
     return answer, new_history
+
 
 
 
